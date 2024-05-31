@@ -154,21 +154,19 @@
   </style>
 </head>
 <body>
-  <h1 class="input-container">Vacuum Chamber Data</h1>
-  <div id="Pressure" style="width:600px; height:560px; text-align: center; margin: 0 auto;"></div>
-  <div class="input-container" id="statusBox" style="font-size:200%;"></div> <!-- Status box -->
-  <br>
-  <br>
-  <div class="input-container">
-  <button onclick="togglePin()" style="height:50px;width:200px">Toggle Pumps</button>
-  <button onclick="toggleManualControl()" style="height:50px;width:200px">Control Mode</button>
-  <div>
-  <br>
-  <br>
-  <div class="input-container">
-    <label for="targetPressure" style="font-size:200%;">Set Target Pressure (torr):</label>
-    <input type="number" id="targetPressure" name="targetPressure" step="1" value="800.0" style="height:50px; width:100px; font-size:200%;">
-    <button onclick="setTargetPressure()" style="height:50px; width:200px">Set Pressure</button>
+  <h1 style="text-align: center;">Vacuum Chamber Data</h1>
+  <div class="container">
+    <div id="livePlot" class="plot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
+    <div id="Pressure" class="gauge" style="width:400px; height:360px;"></div> <!-- Pressure gauge -->
+  </div>
+  <div id="statusBox"></div> <!-- Status box -->
+  <div class="controls">
+    <button onclick="togglePin()">Toggle Pin</button>
+    <div>
+      <label for="targetPressure">Set Target Pressure (torr):</label>
+      <input type="number" id="targetPressure" name="targetPressure" step="0.01" value="500.0">
+      <button onclick="setTargetPressure()">Set Pressure</button>
+    </div>
   </div>
 </body>
 </html>
