@@ -5,6 +5,25 @@
   <script src="raphael-2.1.4.min.js"></script>
   <script src="justgage.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+  <style>
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .plot, .gauge {
+      margin: 10px;
+    }
+    #statusBox {
+      text-align: center;
+      font-size: 1.5em;
+      margin: 20px 0;
+    }
+    .controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+  </style>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var gauge = new JustGage({
@@ -118,15 +137,19 @@
   </script>
 </head>
 <body>
-  <h1>Vacuum Chamber Data</h1>
-  <div id="livePlot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
-  <div id="Pressure" style="width:400px; height:360px;"></div>
+  <h1 style="text-align: center;">Vacuum Chamber Data</h1>
+  <div class="container">
+    <div id="livePlot" class="plot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
+    <div id="Pressure" class="gauge" style="width:400px; height:360px;"></div> <!-- Pressure gauge -->
+  </div>
   <div id="statusBox"></div> <!-- Status box -->
-  <button onclick="togglePin()">Toggle Pin</button>
-  <div>
-    <label for="targetPressure">Set Target Pressure (torr):</label>
-    <input type="number" id="targetPressure" name="targetPressure" step="0.01" value="500.0">
-    <button onclick="setTargetPressure()">Set Pressure</button>
+  <div class="controls">
+    <button onclick="togglePin()">Toggle Pin</button>
+    <div>
+      <label for="targetPressure">Set Target Pressure (torr):</label>
+      <input type="number" id="targetPressure" name="targetPressure" step="0.01" value="500.0">
+      <button onclick="setTargetPressure()">Set Pressure</button>
+    </div>
   </div>
 </body>
 </html>
