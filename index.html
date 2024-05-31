@@ -6,17 +6,10 @@
   <script src="justgage.js"></script>
   <script src="plotly-2.32.0.min.js" charset="utf-8"></script>
   <script>
-    TESTER = document.getElementById('tester');
-    Plotly.newPlot( TESTER, [{
-    x: [1, 2, 3, 4, 5],
-    y: [1, 2, 4, 8, 16] }], {
-    margin: { t: 0 } } );
-  </script>
-  <script>
     document.addEventListener("DOMContentLoaded", function() {
       var gauge = new JustGage({
         id: "Pressure",
-        value: 0.0, 
+        value: 0.0,
         decimals: 2,
         min: 0.0,
         max: 1000.0,
@@ -30,34 +23,24 @@
             throw new Error('Network response was not ok ' + response.statusText);
           }
           const data = await response.text();
-          console.log('Data received:', data); 
-          const match = data.match(/Pressure \(torr\): (\d+(\.\d+)?)/); 
+          console.log('Data received:', data);
+          const match = data.match(/Pressure \(torr\): (\d+(\.\d+)?)/);
           if (match) {
             const numericValue = parseFloat(match[1]);
-            console.log('Pressure value:', numericValue); 
+            console.log('Pressure value:', numericValue);
             if (!isNaN(numericValue)) {
-              console.log('Updating gauge value:', numericValue);
               if (numericValue < 0.1) {
-                gauge.config.min = 0.0;
-                gauge.config.max = 1000.0;
-                gauge.config.decimals = 1; 
-                gauge.config.title = "Pressure (millitorr)";
-                gauge.refresh(numericValue * 1000); 
+                Object.assign(gauge.config, { min: 0.0, max: 1000.0, decimals: 1, title: "Pressure (millitorr)" });
+                gauge.refresh(numericValue * 1000);
               } else if (numericValue < 1) {
-                gauge.config.min = 0.0;
-                gauge.config.max = 1000.0;
-                gauge.config.decimals = 0;
-                gauge.config.title = "Pressure (millitorr)";
+                Object.assign(gauge.config, { min: 0.0, max: 1000.0, decimals: 0, title: "Pressure (millitorr)" });
                 gauge.refresh(numericValue * 1000);
               } else {
-                gauge.config.min = 0.0;
-                gauge.config.max = 1000.0;
-                gauge.config.decimals = 2;
-                gauge.config.title = "Pressure (torr)";
+                Object.assign(gauge.config, { min: 0.0, max: 1000.0, decimals: 2, title: "Pressure (torr)" });
                 gauge.refresh(numericValue);
               }
             } else {
-              console.error('Invalid pressure value:', match[1]); 
+              console.error('Invalid pressure value:', match[1]);
             }
           } else {
             console.error('Pressure value not found in data:', data);
@@ -69,7 +52,12 @@
         }
       }
 
-      setInterval(fetchData, 200); // Update gauge every second
+      setInterval(fetchData, 200);
+
+      document.getElementById('tester') && Plotly.newPlot('tester', [{
+        x: [1, 2, 3, 4, 5],
+        y: [1, 2, 4, 8, 16]
+      }], { margin: { t: 0 } });
     });
 
     function togglePin() {
@@ -106,7 +94,6 @@
         .catch(error => console.error('Error toggling manual control:', error));
     }
   </script>
-  <title>Vacuum Chamber Data</title>
   <style>
     .input-container {
       text-align: center;
@@ -123,13 +110,13 @@
   <h1 class="input-container">Vacuum Chamber Data</h1>
   <div id="tester" style="width:600px;height:250px;"></div>
   <div id="Pressure" style="width:600px; height:560px; text-align: center; margin: 0 auto;"></div>
-  <div class="input-container" id="statusBox" style="font-size:200%;"></div> <!-- Status box -->
+  <div class="input-container" id="statusBox" style="font-size:200%;"></div>
   <br>
   <br>
   <div class="input-container">
-  <button onclick="togglePin()" style="height:50px;width:200px">Toggle Pumps</button>
-  <button onclick="toggleManualControl()" style="height:50px;width:200px">Control Mode</button>
-  <div>
+    <button onclick="togglePin()" style="height:50px;width:200px">Toggle Pumps</button>
+    <button onclick="toggleManualControl()" style="height:50px;width:200px">Control Mode</button>
+  </div>
   <br>
   <br>
   <div class="input-container">
