@@ -129,6 +129,20 @@
       }
 
       setInterval(fetchData, 200); // Update gauge every second
+
+      document.getElementById('sendSerialCommand').addEventListener('click', function() {
+        const command = document.getElementById('serialCommand').value;
+        if (command) {
+          fetch(`http://192.168.0.22/sendCommand?command=${encodeURIComponent(command)}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+              }
+              console.log('Command sent successfully');
+            })
+            .catch(error => console.error('Error sending command:', error));
+        }
+      });
     });
 
     function togglePin() {
@@ -183,6 +197,9 @@
     </div>
   </div>
   <div id="serialData"></div> <!-- Serial data box -->
-  <input type="text" id="targetPressure" name="targetPressure" step="1" value="800.0">
+  <div class="controls">
+    <input type="text" id="serialCommand" placeholder="Enter Serial Command...">
+    <button id="sendSerialCommand">Send Command</button>
+  </div>
 </body>
 </html>
