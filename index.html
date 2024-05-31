@@ -23,6 +23,25 @@
       text-align: center;
       margin: 20px 0;
     }
+    .input-container {
+      text-align: center;
+    }
+    .input-container input,
+    .input-container button {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    #serialData {
+      background-color: black;
+      color: green;
+      width: 100%;
+      height: 150px;
+      overflow-y: scroll;
+      white-space: pre-wrap;
+      font-family: monospace;
+      padding: 10px;
+      box-sizing: border-box;
+    }
   </style>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -83,8 +102,8 @@
               }
 
               // Update the live plot graph
-              timeData.push(currentTime);
-              pressureData.push(pressure);
+              timeData.push(new Date());
+              pressureData.push(numericValue);
               Plotly.update('livePlot', {
                 x: [timeData],
                 y: [pressureData]
@@ -98,6 +117,12 @@
           }
 
           document.getElementById('statusBox').innerText = 'Pumps Status: ' + data;
+
+          // Update the serial data box
+          const serialDataBox = document.getElementById('serialData');
+          serialDataBox.innerText += data + '\n';
+          serialDataBox.scrollTop = serialDataBox.scrollHeight; // Auto-scroll to the bottom
+
         } catch (error) {
           console.error('Error fetching data:', error);
         }
@@ -141,17 +166,6 @@
     }
   </script>
   <title>Vacuum Chamber Data</title>
-  <style>
-    .input-container {
-      text-align: center;
-    }
-
-    .input-container input,
-    .input-container button {
-      display: inline-block;
-      vertical-align: middle;
-    }
-  </style>
 </head>
 <body>
   <h1 style="text-align: center;">Vacuum Chamber Data</h1>
@@ -168,5 +182,6 @@
       <button onclick="setTargetPressure()">Set Pressure</button>
     </div>
   </div>
+  <div id="serialData"></div> <!-- Serial data box -->
 </body>
 </html>
