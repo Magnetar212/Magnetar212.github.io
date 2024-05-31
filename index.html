@@ -4,6 +4,7 @@
   <title>Arduino Data</title>
   <script src="raphael-2.1.4.min.js"></script>
   <script src="justgage.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var gauge = new JustGage({
@@ -15,6 +16,19 @@
         title: "Pressure (torr)"
       });
 
+      var timeData = [];
+      var pressureData = [];
+      var layout = {
+        title: 'Pressure Over Time',
+        xaxis: { title: 'Time' },
+        yaxis: { title: 'Pressure (torr)' }
+      };
+      Plotly.newPlot('livePlot', [{
+        x: timeData,
+        y: pressureData,
+        type: 'line'
+      }], layout);
+
       async function fetchData() {
         try {
           const response = await fetch('https://your-project-id.firebaseio.com/data.json'); // Replace with your Firebase database URL
@@ -22,10 +36,11 @@
             throw new Error('Network response was not ok ' + response.statusText);
           }
           const data = await response.json();
-          console.log('Data received:', data); 
+          console.log('Data received:', data);
 
           if (data && data.pressure) {
             const pressure = parseFloat(data.pressure);
+            const currentTime = new Date().toLocaleTimeString();
             console.log('Pressure value:', pressure);
             if (!isNaN(pressure)) {
               console.log('Updating gauge value:', pressure);
@@ -48,6 +63,14 @@
                 gauge.config.title = "Pressure (torr)";
                 gauge.refresh(pressure);
               }
+
+              // Update the live plot graph
+              timeData.push(currentTime);
+              pressureData.push(pressure);
+              Plotly.update('livePlot', {
+                x: [timeData],
+                y: [pressureData]
+              });
             } else {
               console.error('Invalid pressure value:', data.pressure);
             }
@@ -61,7 +84,7 @@
         }
       }
 
-      setInterval(fetchData, 10000); // Update gauge every 10 seconds
+      setInterval(fetchData, 10000); // Update gauge and plot every 10 seconds
     });
 
     function togglePin() {
@@ -104,5 +127,6 @@
     <input type="number" id="targetPressure" name="targetPressure" step="0.01" value="500.0">
     <button onclick="setTargetPressure()">Set Pressure</button>
   </div>
+  <div id="livePlot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
 </body>
 </html>
