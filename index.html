@@ -4,6 +4,14 @@
   <title>Arduino Data</title>
   <script src="raphael-2.1.4.min.js"></script>
   <script src="justgage.js"></script>
+  <script src="plotly-2.32.0.min.js" charset="utf-8"></script>
+  <script>
+    TESTER = document.getElementById('tester');
+    Plotly.newPlot( TESTER, [{
+    x: [1, 2, 3, 4, 5],
+    y: [1, 2, 4, 8, 16] }], {
+    margin: { t: 0 } } );
+  </script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var gauge = new JustGage({
@@ -113,6 +121,7 @@
 </head>
 <body>
   <h1 class="input-container">Vacuum Chamber Data</h1>
+  <div id="tester" style="width:600px;height:250px;"></div>
   <div id="Pressure" style="width:600px; height:560px; text-align: center; margin: 0 auto;"></div>
   <div class="input-container" id="statusBox" style="font-size:200%;"></div> <!-- Status box -->
   <br>
