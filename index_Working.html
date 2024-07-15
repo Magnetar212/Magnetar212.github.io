@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Arduino Data</title>
+  <script src="raphael-2.1.4.min.js"></script>
+  <script src="justgage.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+  <style>
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .plot, .gauge {
+      margin: 10px;
+    }
+    #statusBox {
+      text-align: center;
+      font-size: 1.5em;
+      margin: 20px 0;
+    }
+    .controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .input-container {
+      text-align: center;
+    }
+    .input-container input,
+    .input-container button {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    #serialData {
+      background-color: black;
+      color: green;
+      width: 100%;
+      height: 150px;
+      overflow-y: scroll;
+      white-space: pre-wrap;
+      font-family: monospace;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var gauge = new JustGage({
+        id: "Pressure",
+        value: 0.0, 
+        decimals: 2,
+        min: 0.0,
+        max: 1000.0,
+        title: "Pressure (torr)"
+      });
+
+      var timeData = [];
+      var pressureData = [];
+      var layout = {
+        title: 'Pressure Over Time',
+        xaxis: { title: 'Time' },
+        yaxis: { title: 'Pressure (torr)' }
+      };
+      Plotly.newPlot('livePlot', [{
+        x: timeData,
+        y: pressureData,
+        type: 'line'
+      }], layout);
+
+      async function fetchData() {
+        try {
+          const response = await fetch('http://192.168.0.22/');
+          if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+          }
+          const data = await response.text();
+          console.log('Data received:', data); 
+          const match = data.match(/Pressure \(torr\): (\d+(\.\d+)?)/); 
+          if (match) {
+            const numericValue = parseFloat(match[1]);
+            console.log('Pressure value:', numericValue); 
+            if (!isNaN(numericValue)) {
+              console.log('Updating gauge value:', numericValue);
+              if (numericValue < 0.1) {
+                gauge.config.min = 0.0;
+                gauge.config.max = 1000.0;
+                gauge.config.decimals = 1; 
+                gauge.config.title = "Pressure (millitorr)";
+                gauge.refresh(numericValue * 1000); 
+              } else if (numericValue < 1) {
+                gauge.config.min = 0.0;
+                gauge.config.max = 1000.0;
+                gauge.config.decimals = 0;
+                gauge.config.title = "Pressure (millitorr)";
+                gauge.refresh(numericValue * 1000);
+              } else {
+                gauge.config.min = 0.0;
+                gauge.config.max = 1000.0;
+                gauge.config.decimals = 2;
+                gauge.config.title = "Pressure (torr)";
+                gauge.refresh(numericValue);
+              }
+
+              // Update the live plot graph
+              timeData.push(new Date());
+              pressureData.push(numericValue);
+              Plotly.update('livePlot', {
+                x: [timeData],
+                y: [pressureData]
+              });
+
+            } else {
+              console.error('Invalid pressure value:', match[1]); 
+            }
+          } else {
+            console.error('Pressure value not found in data:', data);
+          }
+
+          document.getElementById('statusBox').innerText = 'Pumps Status: ' + data;
+
+          // Update the serial data box
+          const serialDataBox = document.getElementById('serialData');
+          serialDataBox.innerText += data + '\n';
+          serialDataBox.scrollTop = serialDataBox.scrollHeight; // Auto-scroll to the bottom
+
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+
+      setInterval(fetchData, 200); // Update gauge every second
+
+      document.getElementById('sendSerialCommand').addEventListener('click', function() {
+        const command = document.getElementById('serialCommand').value;
+        if (command) {
+          fetch(`http://192.168.0.22/sendCommand?command=${encodeURIComponent(command)}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+              }
+              console.log('Command sent successfully');
+            })
+            .catch(error => console.error('Error sending command:', error));
+        }
+      });
+    });
+
+    function togglePin() {
+      fetch('http://192.168.0.22/toggle')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+          }
+          console.log('Pin toggled successfully');
+        })
+        .catch(error => console.error('Error toggling pin:', error));
+    }
+
+    function setTargetPressure() {
+      const targetPressure = document.getElementById('targetPressure').value;
+      fetch(`http://192.168.0.22/setPressure?value=${targetPressure}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+          }
+          console.log('Target pressure set successfully');
+        })
+        .catch(error => console.error('Error setting target pressure:', error));
+    }
+
+    function toggleManualControl() {
+      fetch('http://192.168.0.22/toggleManualControl')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+          }
+          console.log('Manual control toggled successfully');
+        })
+        .catch(error => console.error('Error toggling manual control:', error));
+    }
+  </script>
+  <title>Vacuum Chamber Data</title>
+</head>
+<body>
+  <h1 style="text-align: center;">Vacuum Chamber Data</h1>
+  <div class="container">
+    <div id="livePlot" class="plot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
+    <div id="Pressure" class="gauge" style="width:400px; height:360px;"></div> <!-- Pressure gauge -->
+  </div>
+  <div id="statusBox"></div> <!-- Status box -->
+  <div class="controls">
+    <button onclick="togglePin()">Toggle Pin</button>
+    <button onclick="toggleManualControl()" style="height:50px;width:200px">Control Mode</button>
+    <div>
+      <label for="targetPressure">Set Target Pressure (torr):</label>
+      <input type="number" id="targetPressure" name="targetPressure" step="1" value="800.0">
+      <button onclick="setTargetPressure()">Set Pressure</button>
+    </div>
+  </div>
+  <div id="serialData"></div> <!-- Serial data box -->
+  <div class="controls">
+    <input type="text" id="serialCommand" placeholder="Enter Serial Command...">
+    <button id="sendSerialCommand">Send Command</button>
+  </div>
+</body>
+</html>

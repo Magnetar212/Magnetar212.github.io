@@ -6,6 +6,12 @@
   <script src="justgage.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
   <style>
+    body {
+      background-image: url('Template2.png'); /* Replace 'your-image.png' with the actual filename of your PNG file */
+      background-size: cover;
+      background-position: top center; /* Start the background image from the top center */
+      background-repeat: no-repeat; /* Prevent the background image from repeating */
+    }
     .container {
       display: flex;
       justify-content: center;
@@ -34,13 +40,14 @@
     #serialData {
       background-color: black;
       color: green;
-      width: 100%;
+      width: 75%;
       height: 150px;
-      overflow-y: scroll;
+      overflow-y: hidden; /* Disable scrolling */
       white-space: pre-wrap;
       font-family: monospace;
       padding: 10px;
-      box-sizing: border-box;
+      box-sizing: content-box;
+      margin-left: 12.5%;
     }
   </style>
   <script>
@@ -58,8 +65,20 @@
       var pressureData = [];
       var layout = {
         title: 'Pressure Over Time',
-        xaxis: { title: 'Time' },
-        yaxis: { title: 'Pressure (torr)' }
+        xaxis: { 
+          title: 'Time',
+          showgrid: true, // Enable gridlines for the x-axis
+          gridcolor: '#bdbdbd',
+          gridwidth: 1
+        },
+        yaxis: { 
+          title: 'Pressure (torr)',
+          showgrid: true, // Enable gridlines for the x-axis
+          gridcolor: '#bdbdbd',
+          gridwidth: 1
+        },
+        plot_bgcolor: 'rgba(0,0,0,0)', // Set the background color of the plot area to transparent
+        paper_bgcolor: 'rgba(0,0,0,0)' // Set the background color of the entire plot to transparent
       };
       Plotly.newPlot('livePlot', [{
         x: timeData,
@@ -67,9 +86,11 @@
         type: 'line'
       }], layout);
 
+      let plottingActive = true;
+
       async function fetchData() {
         try {
-          const response = await fetch('http://192.168.0.22/');
+          const response = await fetch('http://192.168.0.105/');
           if (!response.ok) {
             throw new Error('Network response was not ok ' + response.statusText);
           }
@@ -101,13 +122,22 @@
                 gauge.refresh(numericValue);
               }
 
-              // Update the live plot graph
-              timeData.push(new Date());
-              pressureData.push(numericValue);
-              Plotly.update('livePlot', {
-                x: [timeData],
-                y: [pressureData]
-              });
+              if (plottingActive) {
+                // Update the live plot graph
+                timeData.push(new Date());
+                pressureData.push(numericValue);
+
+                // Keep only the last 20 points
+                //if (timeData.length > 20) {
+                //  timeData = timeData.slice(-20);
+                //  pressureData = pressureData.slice(-20);
+                //}
+
+                Plotly.update('livePlot', {
+                  x: [timeData],
+                  y: [pressureData]
+                });
+              }
 
             } else {
               console.error('Invalid pressure value:', match[1]); 
@@ -120,20 +150,20 @@
 
           // Update the serial data box
           const serialDataBox = document.getElementById('serialData');
-          serialDataBox.innerText += data + '\n';
-          serialDataBox.scrollTop = serialDataBox.scrollHeight; // Auto-scroll to the bottom
+          serialDataBox.innerText = data;  // Replace the old data with the new data
+          serialDataBox.scrollTop = serialDataBox.scrollHeight; // Auto-scroll to the bottom (optional)
 
         } catch (error) {
           console.error('Error fetching data:', error);
         }
       }
 
-      setInterval(fetchData, 200); // Update gauge every second
+      setInterval(fetchData, 0); // Update gauge every second
 
       document.getElementById('sendSerialCommand').addEventListener('click', function() {
         const command = document.getElementById('serialCommand').value;
         if (command) {
-          fetch(`http://192.168.0.22/sendCommand?command=${encodeURIComponent(command)}`)
+          fetch(`http://192.168.0.105/sendCommand?command=${encodeURIComponent(command)}`)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Network response was not ok ' + response.statusText);
@@ -143,10 +173,40 @@
             .catch(error => console.error('Error sending command:', error));
         }
       });
+
+      document.getElementById('togglePlotting').addEventListener('click', function() {
+        plottingActive = !plottingActive;
+        this.innerText = plottingActive ? 'Stop Plotting' : 'Start Plotting';
+      });
+
+      document.getElementById('saveData').addEventListener('click', function() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Time,Pressure\n";
+        timeData.forEach((time, index) => {
+          csvContent += `${time.toISOString()},${pressureData[index]}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "pressure_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      document.getElementById('clearGraph').addEventListener('click', function() {
+        timeData = [];
+        pressureData = [];
+        Plotly.update('livePlot', {
+          x: [timeData],
+          y: [pressureData]
+        });
+      });
     });
 
     function togglePin() {
-      fetch('http://192.168.0.22/toggle')
+      fetch('http://192.168.0.105/toggle')
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok ' + response.statusText);
@@ -158,7 +218,7 @@
 
     function setTargetPressure() {
       const targetPressure = document.getElementById('targetPressure').value;
-      fetch(`http://192.168.0.22/setPressure?value=${targetPressure}`)
+      fetch(`http://192.168.0.105/setPressure?value=${targetPressure}`)
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok ' + response.statusText);
@@ -169,7 +229,7 @@
     }
 
     function toggleManualControl() {
-      fetch('http://192.168.0.22/toggleManualControl')
+      fetch('http://192.168.0.105/toggleManualControl')
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok ' + response.statusText);
@@ -182,21 +242,40 @@
   <title>Vacuum Chamber Data</title>
 </head>
 <body>
-  <h1 style="text-align: center;">Vacuum Chamber Data</h1>
+  <h1 style="text-align: center;">Vacuum Chamber Controller</h1>
+  <img src="SatelliteClipArt.png" alt="Soyuz" style="width:428px; height:428px; position: absolute; left: 80px; top: 280px;">
+  <img src="ApophisIllustration.png" alt="Apophis" style="width:428px; height:428px; position: absolute; left: 1580px; top: 270px;">
   <div class="container">
-    <div id="livePlot" class="plot" style="width:600px; height:400px;"></div> <!-- Live plot graph -->
-    <div id="Pressure" class="gauge" style="width:400px; height:360px;"></div> <!-- Pressure gauge -->
+    <div id="livePlot" class="plot" style="width:600px; height:400px; margin-left: 0px;"></div> <!-- Live plot graph -->
+    <div id="Pressure" class="gauge" style="width:400px; height:360px; margin-left: 0px;"></div> <!-- Pressure gauge -->
   </div>
+  <button id="togglePlotting" style="margin-left: 672px;">Stop Plotting</button> <!-- Toggle Plotting Button -->
+  <button id="saveData">Save Data</button> <!-- Save Data Button -->
+  <button id="clearGraph">Clear Graph</button> <!-- Clear Graph Button -->
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
   <div id="statusBox"></div> <!-- Status box -->
   <div class="controls">
-    <button onclick="togglePin()">Toggle Pin</button>
+    <button onclick="togglePin()" style="height:50px;width:200px">Toggle Pin</button>
     <button onclick="toggleManualControl()" style="height:50px;width:200px">Control Mode</button>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
     <div>
       <label for="targetPressure">Set Target Pressure (torr):</label>
       <input type="number" id="targetPressure" name="targetPressure" step="1" value="800.0">
       <button onclick="setTargetPressure()">Set Pressure</button>
     </div>
-  </div>
+  <br>
+  <br>
+  <br>
+  <br>
   <div id="serialData"></div> <!-- Serial data box -->
   <div class="controls">
     <input type="text" id="serialCommand" placeholder="Enter Serial Command...">
